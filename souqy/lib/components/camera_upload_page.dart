@@ -50,7 +50,7 @@ class _CameraUploadPageState extends State<CameraUploadPage> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://206.189.237.170:8000/describe-car-image/'),
+        Uri.parse('http://206.189.237.170:8000/analyze-car/'),
       );
 
       request.files.add(await http.MultipartFile.fromPath('file', image.path));
