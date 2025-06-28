@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:souqy/components/main_screens.dart';
-import 'package:souqy/screens/home.dart';
 
 void main() {
   runApp(const MainApp());

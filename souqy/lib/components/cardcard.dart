@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 class Cardcar extends StatelessWidget {
   final String imageUrl;
   final String title;
-  final String condition; // New o Used
+  final String condition;
   final String price;
+  final VoidCallback? onImageTap;
 
   const Cardcar({
     super.key,
@@ -13,56 +14,85 @@ class Cardcar extends StatelessWidget {
     required this.title,
     required this.condition,
     required this.price,
+    this.onImageTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final pastelCard = const Color(0xFFF6F6FA);
+    final pastelShadow = const Color(0xFFD1C4E9);
+    Widget imageWidget;
+    if (imageUrl.startsWith('http')) {
+      imageWidget = Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        height: 110,
+        width: double.infinity,
+        errorBuilder:
+            (_, __, ___) => Container(height: 110, color: Colors.grey[400]),
+      );
+    } else {
+      imageWidget = Image.asset(
+        imageUrl,
+        fit: BoxFit.contain,
+        height: 110,
+        width: double.infinity,
+        errorBuilder:
+            (_, __, ___) => Container(height: 110, color: Colors.grey[400]),
+      );
+    }
     return Container(
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(15),
+        color: pastelCard,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: pastelShadow.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen del auto
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              height: 110,
-              width: double.infinity,
-              child: Image.asset(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder:
-                    (_, __, ___) =>
-                        Container(height: 110, color: Colors.grey[400]),
-              ),
+          GestureDetector(
+            onTap: onImageTap,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: imageWidget,
             ),
           ),
           const SizedBox(height: 8),
-          // Título del auto
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Color(0xFF5B5B5B),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
-          // Condición
           Text(
             condition,
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.w500,
-              fontSize: 10,
-              color: Colors.grey[600],
+              fontSize: 11,
+              color: Color(0xFF9A9A9A),
             ),
           ),
           const SizedBox(height: 4),
-          // Precio
           Text(
             price,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: Color(0xFF7B6CF6),
+            ),
           ),
         ],
       ),

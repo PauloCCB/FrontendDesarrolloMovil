@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:souqy/components/similar_cars.dart';
 import 'package:souqy/screens/home.dart';
 import 'package:souqy/components/camera_upload_page.dart';
 
