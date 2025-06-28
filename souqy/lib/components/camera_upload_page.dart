@@ -19,6 +19,8 @@ class _CameraUploadPageState extends State<CameraUploadPage> {
   Map<String, dynamic>? _carInfo;
   bool _loading = false;
   String? _error;
+  String? _brand;
+  String? _model;
 
   @override
   void initState() {
@@ -32,6 +34,8 @@ class _CameraUploadPageState extends State<CameraUploadPage> {
       _error = null;
       _carInfo = null;
       _selectedImageFile = null;
+      _brand = null;
+      _model = null;
     });
 
     try {
@@ -62,6 +66,8 @@ class _CameraUploadPageState extends State<CameraUploadPage> {
         var jsonResponse = json.decode(response.body);
         setState(() {
           _carInfo = jsonResponse;
+          _brand = jsonResponse['brand'];
+          _model = jsonResponse['model'];
           _loading = false;
         });
       } else {
@@ -105,12 +111,22 @@ class _CameraUploadPageState extends State<CameraUploadPage> {
         const SizedBox(height: 20),
         Center(
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SimilarCars()),
-              );
-            },
+            onPressed:
+                (_brand != null &&
+                        _model != null &&
+                        _brand!.isNotEmpty &&
+                        _model!.isNotEmpty)
+                    ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>
+                                  SimilarCars(brand: _brand!, model: _model!),
+                        ),
+                      );
+                    }
+                    : null,
             child: const Text('Buscar carro'),
           ),
         ),
