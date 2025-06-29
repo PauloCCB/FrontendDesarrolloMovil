@@ -25,8 +25,9 @@ class _HomePageContentState extends State<HomePageContent> {
   }
 
   Future<void> fetchAutos() async {
-    final response = await http.get(
+    final response = await http.post(
       Uri.parse('https://auto-radar.ryodev.me/auto-scraper/find-by-filter'),
+      body: {},
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -53,22 +54,22 @@ class _HomePageContentState extends State<HomePageContent> {
       loading = true;
       loadingRecommendations = true;
     });
-    // Buscar recomendaciones
     fetchRecommendations(brand: brand, model: model);
-    final Map<String, String> params = {'brand': brand, 'model': model};
+    final Map<String, dynamic> body = {'brand': brand, 'model': model};
     if (minPrice != null && minPrice.isNotEmpty) {
-      params['min_price'] = minPrice;
+      body['min_price'] = int.tryParse(minPrice);
     }
     if (maxPrice != null && maxPrice.isNotEmpty) {
-      params['max_price'] = maxPrice;
+      body['max_price'] = int.tryParse(maxPrice);
     }
     if (minYear != null && minYear.isNotEmpty) {
-      params['min_year'] = minYear;
+      body['min_year'] = int.tryParse(minYear);
     }
-    final uri = Uri.parse(
-      'https://auto-radar.ryodev.me/auto-scraper/find-by-filter',
-    ).replace(queryParameters: params);
-    final response = await http.get(uri);
+    final response = await http.post(
+      Uri.parse('https://auto-radar.ryodev.me/auto-scraper/find-by-filter'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {

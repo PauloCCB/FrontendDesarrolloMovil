@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:souqy/components/cardcard.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 
 class SimilarCars extends StatefulWidget {
   final String brand;
@@ -46,13 +47,13 @@ class _SimilarCarsState extends State<SimilarCars> {
           (data['recommendations'] ?? [])
               .map(
                 (rec) => {
-                  'Marca': rec['Marca'],
-                  'Modelo': rec['Modelo'],
-                  'Año': rec['Año'],
-                  'Precio': rec['Precio'],
-                  'Combustible': rec['Combustible'],
-                  'Transmisión': rec['Transmisión'],
-                  'Kilometraje': rec['Kilometraje'],
+                  'Marca': rec['Marca'] ?? '-',
+                  'Modelo': rec['Modelo'] ?? '-',
+                  'Año': rec['Año']?.toString() ?? '-',
+                  'Precio': rec['Precio']?.toString() ?? '-',
+                  'Combustible': rec['Combustible'] ?? '-',
+                  'Transmisión': rec['Transmisión'] ?? '-',
+                  'Kilometraje': rec['Kilometraje']?.toString() ?? '-',
                 },
               )
               .toList();
@@ -72,10 +73,15 @@ class _SimilarCarsState extends State<SimilarCars> {
     setState(() {
       loadingCars = true;
     });
-    final uri = Uri.parse(
-      'https://auto-radar.ryodev.me/auto-scraper/find-by-filter',
-    ).replace(queryParameters: {'brand': widget.brand, 'model': widget.model});
-    final response = await http.get(uri);
+    final Map<String, dynamic> body = {
+      'brand': widget.brand,
+      'model': widget.model,
+    };
+    final response = await http.post(
+      Uri.parse('https://auto-radar.ryodev.me/auto-scraper/find-by-filter'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final List cars = data['autos'] ?? [];
@@ -88,6 +94,40 @@ class _SimilarCarsState extends State<SimilarCars> {
         similarCars = [];
         loadingCars = false;
       });
+    }
+  }
+
+  Future<void> _showRedirectDialog(String url) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Redirección'),
+            content: const Text(
+              'Se te redirigirá a la página del carro. ¿Deseas continuar?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Aceptar'),
+              ),
+            ],
+          ),
+    );
+    if (result == true) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo abrir la URL.')),
+        );
+      }
     }
   }
 
@@ -140,6 +180,11 @@ class _SimilarCarsState extends State<SimilarCars> {
                                     : '',
                             price:
                                 car["price"] != null ? ' ${car["price"]}' : '',
+                            onImageTap:
+                                car["url"] != null &&
+                                        car["url"].toString().isNotEmpty
+                                    ? () => _showRedirectDialog(car["url"])
+                                    : null,
                           );
                         },
                       ),
@@ -218,6 +263,8 @@ class _AnimatedRecommendationCardState
 
   void _onTap() {
     final rec = widget.rec;
+    // Aquí puedes navegar o mostrar más detalles si lo deseas
+    // Por ahora solo muestra un SnackBar con la info
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -226,12 +273,29 @@ class _AnimatedRecommendationCardState
         duration: const Duration(seconds: 1),
       ),
     );
-    // Aquí puedes navegar o mostrar más detalles si lo deseas
   }
 
   @override
   Widget build(BuildContext context) {
     final rec = widget.rec;
+    String year =
+        rec['Año'] != null && rec['Año'] != '-' ? rec['Año'].toString() : '';
+    String km =
+        rec['Kilometraje'] != null && rec['Kilometraje'] != '-'
+            ? '${rec['Kilometraje']} km'
+            : '';
+    String combustible =
+        rec['Combustible'] != null && rec['Combustible'] != '-'
+            ? rec['Combustible']
+            : '';
+    String transmision =
+        rec['Transmisión'] != null && rec['Transmisión'] != '-'
+            ? rec['Transmisión']
+            : '';
+    String precio =
+        rec['Precio'] != null && rec['Precio'] != '-'
+            ? '\u0024${rec['Precio'].toString().replaceAll('.0', '')}'
+            : '';
     return GestureDetector(
       onTap: _onTap,
       onTapDown: _onTapDown,
@@ -271,14 +335,19 @@ class _AnimatedRecommendationCardState
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Text(
-                    '${rec['Año']}',
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
-                  const SizedBox(width: 12),
-                  if (rec['Kilometraje'] != null)
+                  if (year.isNotEmpty)
                     Text(
-                      '${rec['Kilometraje'].toString().replaceAll('.0', '')} km',
+                      year,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  if (year.isNotEmpty && km.isNotEmpty)
+                    const SizedBox(width: 12),
+                  if (km.isNotEmpty)
+                    Text(
+                      km,
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black54,
@@ -287,27 +356,26 @@ class _AnimatedRecommendationCardState
                 ],
               ),
               const SizedBox(height: 2),
-              if (rec['Combustible'] != null)
+              if (combustible.isNotEmpty)
                 Text(
-                  '${rec['Combustible']}',
+                  combustible,
                   style: const TextStyle(fontSize: 12, color: Colors.black87),
                 ),
-              if (rec['Transmisión'] != null)
+              if (transmision.isNotEmpty)
                 Text(
-                  '${rec['Transmisión']}',
+                  transmision,
                   style: const TextStyle(fontSize: 12, color: Colors.black87),
                 ),
               const Spacer(),
-              Text(
-                rec['Precio'] != null
-                    ? '\u0024${rec['Precio'].toString().replaceAll('.0', '')}'
-                    : '',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF21B573),
+              if (precio.isNotEmpty)
+                Text(
+                  precio,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF21B573),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
